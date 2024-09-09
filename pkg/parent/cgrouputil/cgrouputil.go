@@ -58,6 +58,7 @@ func EvacuateCgroup2(evac string) error {
 		if pidStr == "" || pidStr == "0" {
 			continue
 		}
+		// #nosec G703: path is properly built
 		if err := os.WriteFile(filepath.Join(newPath, "cgroup.procs"), []byte(pidStr), 0644); err != nil {
 			logrus.WithError(err).Warnf("failed to move process %s to cgroup %q", pidStr, newGroup)
 		}
@@ -70,6 +71,7 @@ func EvacuateCgroup2(evac string) error {
 	}
 	for _, controller := range strings.Fields(string(controllerBytes)) {
 		logrus.Debugf("enabling controller %q", controller)
+		// #nosec G703: path is properly built
 		if err := os.WriteFile(filepath.Join(oldPath, "cgroup.subtree_control"), []byte("+"+controller), 0644); err != nil {
 			logrus.WithError(err).Warnf("failed to enable controller %q", controller)
 		}

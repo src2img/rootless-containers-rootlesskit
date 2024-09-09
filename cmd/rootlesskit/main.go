@@ -681,7 +681,7 @@ func unameM() string {
 	var machine string
 	for _, u8 := range utsname.Machine {
 		if u8 != 0 {
-			machine += string(byte(u8))
+			machine += string(byte(u8)) // #nosec G115 -- utsname.machine contains bytes [0..127]; no negative values expected
 		}
 	}
 	return machine

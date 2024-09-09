@@ -18,6 +18,6 @@ func AddIPInt(ip net.IP, i int) (net.IP, error) {
 		return nil, fmt.Errorf("%s + %d overflows", ip.String(), i)
 	}
 	res := make(net.IP, 4)
-	binary.BigEndian.PutUint32(res, uint32(resInt64))
+	binary.BigEndian.PutUint32(res, uint32(resInt64)) // #nosec G115: value is checked above
 	return res, nil
 }

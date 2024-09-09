@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -60,7 +61,7 @@ func createCmd(opt Opt) (*exec.Cmd, error) {
 	var cmd *exec.Cmd
 	cmdEnv := os.Environ()
 	if fixListenPidEnv {
-		cmd = exec.Command("/proc/self/exe", os.Args[1:]...)
+		cmd = exec.Command("/proc/self/exe", os.Args[1:]...) // #nosec G702: reasonable building of command arguments for this tool
 		cmdEnv = append(cmdEnv, opt.RunActivationHelperEnvKey+"=true")
 	} else {
 		var args []string
@@ -198,7 +199,7 @@ func setupNet(stateDir string, msg *messages.ParentInitNetworkDriverCompleted, e
 		return err
 	}
 	stateDirHosts := filepath.Join(stateDir, "hosts")
-	if err := os.WriteFile(stateDirHosts, hostsContent, 0644); err != nil {
+	if err := os.WriteFile(stateDirHosts, hostsContent, 0644); err != nil { // #nosec G703: this is build from the state directory and a constant, that is safe
 		return fmt.Errorf("writing %s: %w", stateDirHosts, err)
 	}
 
@@ -211,7 +212,7 @@ func setupNet(stateDir string, msg *messages.ParentInitNetworkDriverCompleted, e
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(stateDirResolvConf, generateResolvConf(msg.DNS), 0644); err != nil {
+		if err := os.WriteFile(stateDirResolvConf, generateResolvConf(msg.DNS), 0644); err != nil { // #nosec G703: this is build from the state directory and a constant, that is safe
 			return fmt.Errorf("writing %s: %w", stateDirResolvConf, err)
 		}
 		Info, _ := driver.ChildDriverInfo()
@@ -253,7 +254,7 @@ func setupNet(stateDir string, msg *messages.ParentInitNetworkDriverCompleted, e
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(stateDirResolvConf, generateResolvConf(msg.DNS), 0644); err != nil {
+		if err := os.WriteFile(stateDirResolvConf, generateResolvConf(msg.DNS), 0644); err != nil { // #nosec G703: this is build from the state directory and a constant, that is safe
 			return fmt.Errorf("writing %s: %w", stateDirResolvConf, err)
 		}
 		if err := ns.WithNetNSPath(detachedNetNSPath, func(_ ns.NetNS) error {
@@ -302,9 +303,12 @@ func statPIDNS(pid int) (uint64, error) {
 
 func hasCaps() (bool, error) {
 	pid := os.Getpid()
+	if pid > math.MaxInt32 || pid < math.MinInt32 {
+		return false, fmt.Errorf("pid overflows int32: %d", pid)
+	}
 	hdr := unix.CapUserHeader{
 		Version: unix.LINUX_CAPABILITY_VERSION_3,
-		Pid:     int32(pid),
+		Pid:     int32(pid), // #nosec G115: value is checked above
 	}
 	var data unix.CapUserData
 	if err := unix.Capget(&hdr, &data); err != nil {
@@ -344,7 +348,7 @@ func gainCaps() error {
 	os.Setenv(envName, strconv.Itoa(envValueInt+1))
 
 	// PID should be kept after re-execution.
-	if err := syscall.Exec("/proc/self/exe", os.Args, os.Environ()); err != nil {
+	if err := syscall.Exec("/proc/self/exe", os.Args, os.Environ()); err != nil { // #nosec G702: reasonable building of command arguments for the use case of this tool
 		return err
 	}
 	panic("should not reach here")
@@ -362,9 +366,15 @@ func Child(opt Opt) error {
 	if _, err := fmt.Sscanf(pipeFDStr, "%d,%d", &pipeFD, &pipe2FD); err != nil {
 		return fmt.Errorf("unexpected fd value: %s: %w", pipeFDStr, err)
 	}
+	if pipeFD < 0 {
+		return fmt.Errorf("invalid file descriptor pipeFD (negative): %d", pipeFD)
+	}
+	if pipe2FD < 0 {
+		return fmt.Errorf("invalid file descriptor pipe2FD (negative): %d", pipe2FD)
+	}
 	logrus.Debugf("pipeFD=%d, pipe2FD=%d", pipeFD, pipe2FD)
-	pipeR := os.NewFile(uintptr(pipeFD), "")
-	pipe2W := os.NewFile(uintptr(pipe2FD), "")
+	pipeR := os.NewFile(uintptr(pipeFD), "")   // #nosec G115: this is a problem only for negative file descriptors which is checked above
+	pipe2W := os.NewFile(uintptr(pipe2FD), "") // #nosec G115: this is a problem only for negative file descriptors which is checked above
 
 	if opt.StateDirEnvKey == "" {
 		opt.StateDirEnvKey = "ROOTLESSKIT_STATE_DIR" // for backward compatibility of Go API
@@ -616,7 +626,7 @@ func (e *reaperErr) Error() string {
 }
 
 func NewNetNsWithPathWithoutEnter(p string) error {
-	if err := os.WriteFile(p, nil, 0400); err != nil {
+	if err := os.WriteFile(p, nil, 0400); err != nil { // #nosec G703: the caller builds this from a directory from an environment variable and a constant, that is safe
 		return err
 	}
 	selfExe, err := os.Executable()
@@ -624,7 +634,7 @@ func NewNetNsWithPathWithoutEnter(p string) error {
 		return err
 	}
 	// this is hard (not impossible though) to reimplement in Go: https://github.com/cloudflare/slirpnetstack/commit/d7766a8a77f0093d3cb7a94bd0ccbe3f67d411ba
-	cmd := exec.Command("unshare", "-n", "mount", "--bind", "/proc/self/ns/net", p)
+	cmd := exec.Command("unshare", "-n", "mount", "--bind", "/proc/self/ns/net", p) // #nosec G702: reasonable building of command arguments
 	// Use our own implementation of unshare that is embedded in RootlessKit, so as to
 	// avoid /etc/apparmor.d/unshare-userns-restrict on Ubuntu 25.04.
 	// https://github.com/rootless-containers/rootlesskit/issues/494

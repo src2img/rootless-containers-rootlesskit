@@ -61,7 +61,7 @@ func (c *client) Info(ctx context.Context) (*api.Info, error) {
 		return nil, err
 	}
 	req = req.WithContext(ctx)
-	resp, err := c.HTTPClient().Do(req)
+	resp, err := c.HTTPClient().Do(req) // #nosec G704: the server hier is the RootlessKit daemon
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (pm *portManager) AddPort(ctx context.Context, spec port.Spec) (*port.Statu
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
-	resp, err := pm.client.HTTPClient().Do(req)
+	resp, err := pm.client.HTTPClient().Do(req) // #nosec G704: the server hier is the RootlessKit daemon
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (pm *portManager) ListPorts(ctx context.Context) ([]port.Status, error) {
 		return nil, err
 	}
 	req = req.WithContext(ctx)
-	resp, err := pm.client.HTTPClient().Do(req)
+	resp, err := pm.client.HTTPClient().Do(req) // #nosec G704: the server hier is the RootlessKit daemon
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (pm *portManager) RemovePort(ctx context.Context, id int) error {
 		return err
 	}
 	req = req.WithContext(ctx)
-	resp, err := pm.client.HTTPClient().Do(req)
+	resp, err := pm.client.HTTPClient().Do(req) // #nosec G704: the server hier is the RootlessKit daemon
 	if err != nil {
 		return err
 	}

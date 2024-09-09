@@ -167,7 +167,7 @@ func xmain(f *os.File) error {
 		if err != nil {
 			return err
 		}
-		return syscall.Exec(realProxyExe, append([]string{realProxy}, os.Args[1:]...), os.Environ())
+		return syscall.Exec(realProxyExe, append([]string{realProxy}, os.Args[1:]...), os.Environ()) // #nosec G702: reasonable building of command arguments
 	}
 
 	// use loopback IP as the child IP, when port-driver="builtin"
@@ -208,7 +208,7 @@ func xmain(f *os.File) error {
 		"-container-port", strconv.Itoa(*containerPort),
 		"-host-ip", childIP,
 		"-host-port", strconv.Itoa(*hostPort),
-		"-proto", *proto)
+		"-proto", *proto) // #nosec G702: reasonable building of command arguments
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()

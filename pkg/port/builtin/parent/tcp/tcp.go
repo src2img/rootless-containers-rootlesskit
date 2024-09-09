@@ -63,7 +63,10 @@ func copyConnToChild(c net.Conn, socketPath string, spec port.Spec, stopCh <-cha
 	if err != nil {
 		return err
 	}
-	f := os.NewFile(uintptr(fd), "")
+	if fd < 0 {
+		return fmt.Errorf("invalid file descriptor (negative): %d", fd)
+	}
+	f := os.NewFile(uintptr(fd), "") // #nosec G115: this is a problem only for negative file descriptors which is checked above
 	defer f.Close()
 	fc, err := net.FileConn(f)
 	if err != nil {

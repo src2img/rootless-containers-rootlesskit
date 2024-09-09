@@ -179,14 +179,14 @@ fallback:
 		return err
 	}
 	defer targetConnFile.Close()
-	oob := unix.UnixRights(int(targetConnFile.Fd()))
+	oob := unix.UnixRights(int(targetConnFile.Fd())) // #nosec G115: this is safe on 64 bit
 	f, err := c.File()
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 	for {
-		err = unix.Sendmsg(int(f.Fd()), []byte("dummy"), oob, nil, 0)
+		err = unix.Sendmsg(int(f.Fd()), []byte("dummy"), oob, nil, 0) // #nosec G115: this is safe on 64 bit
 		if err != unix.EINTR {
 			break
 		}
@@ -265,9 +265,9 @@ func transparentDial(dialProto, targetAddr, sourceIP string, sourcePort int) (ne
 			var sockErr error
 			if err := c.Control(func(fd uintptr) {
 				if strings.Contains(network, "6") {
-					sockErr = unix.SetsockoptInt(int(fd), unix.SOL_IPV6, unix.IPV6_TRANSPARENT, 1)
+					sockErr = unix.SetsockoptInt(int(fd), unix.SOL_IPV6, unix.IPV6_TRANSPARENT, 1) // #nosec G115: this is safe on 64 bit
 				} else {
-					sockErr = unix.SetsockoptInt(int(fd), unix.SOL_IP, unix.IP_TRANSPARENT, 1)
+					sockErr = unix.SetsockoptInt(int(fd), unix.SOL_IP, unix.IP_TRANSPARENT, 1) // #nosec G115: this is safe on 64 bit
 				}
 			}); err != nil {
 				return err

@@ -105,7 +105,7 @@ func createCleanupLock(sDir string) error {
 	if err != nil {
 		return err
 	}
-	err = unix.Flock(int(stateDir.Fd()), unix.LOCK_SH)
+	err = unix.Flock(int(stateDir.Fd()), unix.LOCK_SH) // #nosec G115: this is safe on 64 bit
 	if err != nil {
 		logrus.Warnf("Failed to lock the state dir %s", sDir)
 	}
@@ -173,7 +173,7 @@ func Parent(opt Opt) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("/proc/self/exe", os.Args[1:]...)
+	cmd := exec.Command("/proc/self/exe", os.Args[1:]...) // #nosec G702: reasonable building of command arguments
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Pdeathsig:  syscall.SIGKILL,
 		Cloneflags: syscall.CLONE_NEWUSER | syscall.CLONE_NEWNS,
@@ -330,7 +330,7 @@ func Parent(opt Opt) error {
 
 	// after child is fully configured, write PID to child_pid file
 	childPIDPath := filepath.Join(opt.StateDir, StateFileChildPID)
-	if err := os.WriteFile(childPIDPath, []byte(strconv.Itoa(cmd.Process.Pid)), 0444); err != nil {
+	if err := os.WriteFile(childPIDPath, []byte(strconv.Itoa(cmd.Process.Pid)), 0444); err != nil { // #nosec G703: this path is build from a config option and a constant, that is safe
 		return fmt.Errorf("failed to write the child PID %d to %s: %w", cmd.Process.Pid, childPIDPath, err)
 	}
 	// listens the API
@@ -438,12 +438,12 @@ func setupUIDGIDMap(pid int, subidSource SubidSource) error {
 		return fmt.Errorf("failed to compute uid/gid map: %w", err)
 	}
 	pidS := strconv.Itoa(pid)
-	cmd := exec.Command("newuidmap", append([]string{pidS}, uArgs...)...)
+	cmd := exec.Command("newuidmap", append([]string{pidS}, uArgs...)...) // #nosec G702: reasonable building of command arguments
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("newuidmap %s %v failed: %s: %w", pidS, uArgs, string(out), err)
 	}
-	cmd = exec.Command("newgidmap", append([]string{pidS}, gArgs...)...)
+	cmd = exec.Command("newgidmap", append([]string{pidS}, gArgs...)...) // #nosec G702: reasonable building of command arguments
 	out, err = cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("newgidmap %s %v failed: %s: %w", pidS, gArgs, string(out), err)

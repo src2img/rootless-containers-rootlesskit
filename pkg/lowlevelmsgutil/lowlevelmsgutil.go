@@ -22,7 +22,7 @@ func MarshalToWriter(w io.Writer, x interface{}) (int, error) {
 		return 0, fmt.Errorf("bad message length: %d (max: %d)", len(b), maxLength)
 	}
 	h := make([]byte, 4)
-	binary.LittleEndian.PutUint32(h, uint32(len(b)))
+	binary.LittleEndian.PutUint32(h, uint32(len(b))) // #nosec G115: value is checked above
 	return w.Write(append(h, b...))
 }
 

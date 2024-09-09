@@ -77,7 +77,7 @@ func execGetsubids(exe string, g bool, s string) ([]idtools.SubIDRange, error) {
 	}
 	var stderr bytes.Buffer
 	args = append(args, s)
-	cmd := exec.Command(exe, args...)
+	cmd := exec.Command(exe, args...) // #nosec G702: reasonable building of command arguments
 	cmd.Stderr = &stderr
 	logrus.Debugf("Executing %v", cmd.Args)
 	out, err := cmd.Output()

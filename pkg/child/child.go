@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -303,9 +304,12 @@ func statPIDNS(pid int) (uint64, error) {
 
 func hasCaps() (bool, error) {
 	pid := os.Getpid()
+	if pid > math.MaxInt32 || pid < math.MinInt32 {
+		return false, fmt.Errorf("pid overflows int32: %d", pid)
+	}
 	hdr := unix.CapUserHeader{
 		Version: unix.LINUX_CAPABILITY_VERSION_3,
-		Pid:     int32(pid),
+		Pid:     int32(pid), // #nosec G115: value is checked above
 	}
 	var data unix.CapUserData
 	if err := unix.Capget(&hdr, &data); err != nil {
